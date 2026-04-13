@@ -271,6 +271,11 @@
         sessionStorage.removeItem(KYC_STATUS_KEY);
       }
 
+      if (window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+
       window.location.href = "./index.html";
     }
 
