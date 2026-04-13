@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SK Finance Car Loan WhatsApp Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="info-panel">
+      <div class="brand-badge">SK Finance</div>
+      <h1>SK Finance Car Loan WhatsApp Mockup</h1>
+      <p>
+        A working front-end prototype of the SK Finance virtual assistant based on your
+        provided WhatsApp conversation. It includes OTP, state and branch selection,
+        KYC handoff, eligibility, ROI, EMI, and proceed confirmation.
+      </p>
+
+      <div class="feature-list">
+        <div class="feature-card">
+          <h2>What this mockup includes</h2>
+          <ul>
+            <li>WhatsApp-style conversation interface</li>
+            <li>Your SK Finance car loan chat flow</li>
+            <li>Quick reply buttons and free-text input</li>
+            <li>Aadhaar and PAN verification demo page</li>
+            <li>Indicative ROI and EMI calculation</li>
+          </ul>
+        </div>
+
+        <div class="feature-card">
+          <h2>How to customize</h2>
+          <ul>
+            <li>Update the flow in <code>chat-script.js</code></li>
+            <li>Adjust UI branding in <code>styles.css</code></li>
+            <li>Open <code>kyc.html</code> for the KYC step</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="phone-stage">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="chat-app">
+          <header class="chat-header">
+            <div class="avatar">SK</div>
+            <div class="chat-header-copy">
+              <strong>SK Finance Car Loan Assistant</strong>
+              <span id="presenceText">Online now</span>
+            </div>
+            <button id="restartButton" class="ghost-button" type="button">Restart</button>
+          </header>
+
+          <div id="chatMessages" class="chat-messages" aria-live="polite"></div>
+
+          <div id="quickReplies" class="quick-replies"></div>
+
+          <form id="chatForm" class="chat-input-bar">
+            <input
+              id="chatInput"
+              type="text"
+              placeholder="Type your reply..."
+              autocomplete="off"
+              aria-label="Type your message"
+            >
+            <button id="sendButton" type="submit">Send</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <template id="messageTemplate">
+    <article class="message-row">
+      <div class="message-bubble"></div>
+    </article>
+  </template>
+
+  <script src="chat-script.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SK Finance KYC Verification Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: linear-gradient(145deg, #eef5ef, #f7ead2);
+      --card: rgba(255, 255, 255, 0.88);
+      --text: #123129;
+      --muted: #5c716b;
+      --accent: #0f6758;
+      --accent-2: #f2a900;
+      --border: rgba(18, 49, 41, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: "Manrope", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .card {
+      width: min(100%, 620px);
+      padding: 28px;
+      border-radius: 28px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 60px rgba(18, 49, 41, 0.12);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 0.95;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    form {
+      display: grid;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    label {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    input {
+      width: 100%;
+      margin-top: 8px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      font: inherit;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    button,
+    a {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #173026;
+      background: linear-gradient(180deg, var(--accent-2), #df9a05);
+    }
+
+    .secondary-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 18px;
+      border-radius: 999px;
+      text-decoration: none;
+      color: white;
+      background: var(--accent);
+    }
+
+    .result {
+      display: none;
+      margin-top: 22px;
+      padding: 18px;
+      border-radius: 20px;
+      background: rgba(15, 103, 88, 0.08);
+      border: 1px solid rgba(15, 103, 88, 0.12);
+    }
+
+    .result.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Aadhaar &amp; PAN Verification</h1>
+    <p>
+      This is a demo KYC page for the SK Finance mockup. Enter sample values and submit to simulate
+      successful Aadhaar and PAN verification.
+    </p>
+
+    <form id="kycForm">
+      <label>
+        Aadhaar Number
+        <input id="aadhaarInput" type="text" maxlength="12" placeholder="Enter 12-digit Aadhaar number">
+      </label>
+
+      <label>
+        PAN Number
+        <input id="panInput" type="text" maxlength="10" placeholder="Enter PAN number">
+      </label>
+
+      <div class="actions">
+        <button type="submit">Verify</button>
+        <a class="secondary-link" href="./index.html">Back to Chatbot</a>
+      </div>
+    </form>
+
+    <section id="kycResult" class="result">
+      <strong>Verification successful.</strong>
+      <p>Your Aadhaar and PAN have been verified for this mockup. Return to the chatbot and choose <strong>Verified Successfully</strong>.</p>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("kycForm");
+    const result = document.getElementById("kycResult");
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      result.classList.add("show");
+    });
+  </script>
+</body>
+</html>
