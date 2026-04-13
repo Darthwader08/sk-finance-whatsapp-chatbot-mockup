@@ -324,7 +324,7 @@ window.chatScript = {
       dynamicMessages: [
         "Please complete Aadhaar and PAN verification using the secure KYC demo link below.",
         () => ({
-          html: 'Open KYC verification: <a href="./kyc.html" target="_blank" rel="noopener noreferrer">Aadhaar / PAN Verification Demo</a>'
+          html: 'Open KYC verification: <a href="./kyc.html" target="_blank">Aadhaar / PAN Verification Demo</a>'
         }),
         "Once both Aadhaar and PAN are verified successfully, come back here and choose the option below."
       ],
