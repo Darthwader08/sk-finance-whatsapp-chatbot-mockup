@@ -5,7 +5,7 @@ window.chatScript = {
   steps: {
     welcome: {
       messages: [
-        "SK Finance virtual assistance welcomes you. I am happy to help.",
+        "SKF WhatsApp buddy welcomes you. I am happy to help !!!",
         "Select language"
       ],
       options: [
