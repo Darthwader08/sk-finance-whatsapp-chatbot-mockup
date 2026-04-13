@@ -326,20 +326,36 @@ window.chatScript = {
     },
     eligibleResult: {
       dynamicMessages: [
+        (state) => ({
+          html: [
+            "<strong>Your Aadhaar and PAN have been verified successfully.</strong><br>",
+            "<strong>You are eligible for applying for the loan.</strong><br><br>",
+            `Requested loan amount: <strong>${formatCurrency(state.loanAmount)}</strong><br>`,
+            "Select the button below to view the eligible loan calculation."
+          ].join("")
+        })
+      ],
+      options: [
+        { label: "View Loan Calculation", value: "View Loan Calculation", next: "loanCalculation" }
+      ]
+    },
+    loanCalculation: {
+      dynamicMessages: [
         (state) => {
-          const offerLines = [24, 36, 48, 60].map((months) => {
+          const rows = [24, 36, 48, 60].map((months) => {
             const roi = calculateRoi(Number(state.loanAmount), months);
             const emi = calculateEmi(state.loanAmount, roi, months);
-            return `${months} months: ROI ${roi.toFixed(2)}% | EMI ${formatCurrency(emi)}`;
+            return `<strong>${months} months</strong>: ROI ${roi.toFixed(2)}% | EMI ${formatCurrency(emi)}`;
           });
 
-          return [
-            "Your Aadhaar and PAN have been verified successfully.",
-            "You are eligible for applying for the loan.",
-            `Based on your requested loan amount of ${formatCurrency(state.loanAmount)}, here are the indicative loan calculations:`,
-            offerLines.join("\n"),
-            "Please select your preferred tenure to continue."
-          ].join("\n");
+          return {
+            html: [
+              "<strong>Loan Calculation</strong><br>",
+              `Eligible amount requested: <strong>${formatCurrency(state.loanAmount)}</strong><br><br>`,
+              rows.join("<br>"),
+              "<br><br>Select your preferred tenure."
+            ].join("")
+          };
         }
       ],
       capture: {
@@ -360,19 +376,20 @@ window.chatScript = {
           const emi = calculateEmi(state.loanAmount, roi, state.tenureMonths);
           state.roi = roi;
           state.emi = emi;
-          return [
-            `You are eligible for the loan.`,
-            `Selected tenure: ${state.tenureMonths} months`,
-            `Indicative ROI: ${roi.toFixed(2)}% per annum`,
-            `Estimated monthly installment: ${formatCurrency(emi)}`,
-            "This is a mockup estimate for demonstration purposes.",
-            "Would you like to proceed?"
-          ].join("\n");
+          return {
+            html: [
+              "<strong>You are eligible for the loan.</strong><br>",
+              `Selected tenure: <strong>${state.tenureMonths} months</strong><br>`,
+              `Indicative ROI: <strong>${roi.toFixed(2)}% per annum</strong><br>`,
+              `Estimated monthly installment: <strong>${formatCurrency(emi)}</strong><br><br>`,
+              "Would you like to proceed?"
+            ].join("")
+          };
         }
       ],
       options: [
         { label: "Proceed", value: "Proceed", next: "finalSummary" },
-        { label: "Change Tenure", value: "Change Tenure", next: "eligibleResult" }
+        { label: "Change Tenure", value: "Change Tenure", next: "loanCalculation" }
       ]
     },
     finalSummary: {
