@@ -147,6 +147,22 @@
       display: block;
     }
 
+    .field-note {
+      margin-top: 8px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .field-note.error {
+      color: #b42318;
+      font-weight: 700;
+    }
+
+    .field-note.success {
+      color: #0f6758;
+      font-weight: 700;
+    }
+
     .access-card form {
       display: flex;
       gap: 12px;
@@ -198,12 +214,15 @@
     <form id="kycForm">
       <label>
         Aadhaar Number
-        <input id="aadhaarInput" type="text" maxlength="12" placeholder="Enter 12-digit Aadhaar number">
+        <input id="aadhaarInput" type="password" inputmode="numeric" maxlength="12" placeholder="Enter 12-digit Aadhaar number">
+        <div class="field-note">Aadhaar entry is masked for compliance.</div>
       </label>
 
       <label>
         PAN Number
-        <input id="panInput" type="text" maxlength="10" placeholder="Enter PAN number">
+        <input id="panInput" type="password" maxlength="10" placeholder="Enter PAN number">
+        <div class="field-note">PAN entry is masked for compliance.</div>
+        <div id="panStatus" class="field-note" hidden></div>
       </label>
 
       <div class="actions">
@@ -228,6 +247,9 @@
     const accessForm = document.getElementById("accessForm");
     const accessInput = document.getElementById("accessInput");
     const accessError = document.getElementById("accessError");
+    const aadhaarInput = document.getElementById("aadhaarInput");
+    const panInput = document.getElementById("panInput");
+    const panStatus = document.getElementById("panStatus");
     const backToChatLink = document.getElementById("backToChatLink");
     const continueToChatLink = document.getElementById("continueToChatLink");
     const form = document.getElementById("kycForm");
@@ -250,6 +272,23 @@
       sessionStorage.setItem(KYC_STATUS_KEY, "verified");
     });
 
+    aadhaarInput.addEventListener("input", function () {
+      this.value = this.value.replace(/\D/g, "").slice(0, 12);
+    });
+
+    panInput.addEventListener("input", function () {
+      this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
+      panStatus.hidden = true;
+      panStatus.className = "field-note";
+      panStatus.textContent = "";
+    });
+
+    function showPanStatus(message, tone) {
+      panStatus.hidden = false;
+      panStatus.className = "field-note " + tone;
+      panStatus.textContent = message;
+    }
+
     accessForm.addEventListener("submit", function (event) {
       event.preventDefault();
 
@@ -264,6 +303,40 @@
 
     form.addEventListener("submit", function (event) {
       event.preventDefault();
+
+      const aadhaarValue = aadhaarInput.value.trim();
+      const panValue = panInput.value.trim();
+
+      if (!/^\d{12}$/.test(aadhaarValue)) {
+        showPanStatus("Please enter a valid 12-digit Aadhaar number.", "error");
+        result.classList.remove("show");
+        return;
+      }
+
+      if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panValue)) {
+        showPanStatus("Invalid PAN details.", "error");
+        result.classList.remove("show");
+        return;
+      }
+
+      const customerTypeCode = panValue.charAt(3);
+
+      if (customerTypeCode === "P") {
+        showPanStatus("Customer type: Individual.", "success");
+        result.classList.add("show");
+        return;
+      }
+
+      if (customerTypeCode === "C") {
+        showPanStatus("Customer type: Non-Individual. Please apply for Business Loan or Commercial Vehicle Loan.", "error");
+        result.classList.remove("show");
+        return;
+      }
+
+      showPanStatus("Invalid PAN details.", "error");
+      result.classList.remove("show");
+      return;
+
       result.classList.add("show");
     });
   </script>
