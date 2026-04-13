@@ -19,6 +19,19 @@
   let conversationState = {};
   let isBotBusy = false;
 
+  function handleKycEvent(action) {
+    if (action === "verified") {
+      moveToNextStep("eligibleResult");
+      return;
+    }
+
+    if (action === "back") {
+      if (restoreChatState()) {
+        renderStep(currentStepId);
+      }
+    }
+  }
+
   function persistChatState() {
     const payload = {
       currentStepId,
@@ -353,6 +366,14 @@
 
   restartButton.addEventListener("click", resetConversation);
 
+  window.addEventListener("message", (event) => {
+    if (event.origin !== window.location.origin || !event.data || event.data.type !== "skFinanceKycReturn") {
+      return;
+    }
+
+    handleKycEvent(event.data.action);
+  });
+
   accessForm.addEventListener("submit", (event) => {
     event.preventDefault();
 
@@ -360,7 +381,7 @@
       unlockDemo();
       if (getPendingKycReturn() && restoreChatState()) {
         clearPendingKycReturn();
-        moveToNextStep("eligibleResult");
+        handleKycEvent("verified");
         return;
       }
 
