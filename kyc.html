@@ -242,6 +242,7 @@
 
   <script>
     const DEMO_PASSWORD = "Nano4545$";
+    const AUTH_SESSION_KEY = "skFinanceDemoSessionAuth";
     const KYC_STATUS_KEY = "skFinanceKycStatus";
     const accessGate = document.getElementById("accessGate");
     const accessForm = document.getElementById("accessForm");
@@ -256,6 +257,7 @@
     const result = document.getElementById("kycResult");
 
     function unlockDemo() {
+      sessionStorage.setItem(AUTH_SESSION_KEY, "true");
       accessGate.hidden = true;
       document.body.classList.remove("locked");
       accessInput.value = "";
@@ -263,16 +265,6 @@
     }
 
     function returnToChat(action) {
-      if (window.opener && !window.opener.closed) {
-        window.opener.postMessage(
-          { type: "skFinanceKycReturn", action: action },
-          window.location.origin
-        );
-        window.opener.focus();
-        window.close();
-        return;
-      }
-
       if (action === "verified") {
         sessionStorage.setItem(KYC_STATUS_KEY, "verified");
       } else {
@@ -282,7 +274,11 @@
       window.location.href = "./index.html";
     }
 
-    document.body.classList.add("locked");
+    if (sessionStorage.getItem(AUTH_SESSION_KEY) === "true") {
+      accessGate.hidden = true;
+    } else {
+      document.body.classList.add("locked");
+    }
 
     backToChatLink.addEventListener("click", function (event) {
       event.preventDefault();

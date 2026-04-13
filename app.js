@@ -1,5 +1,6 @@
 (function () {
   const DEMO_PASSWORD = "Nano4545$";
+  const AUTH_SESSION_KEY = "skFinanceDemoSessionAuth";
   const CHAT_STATE_KEY = "skFinanceChatState";
   const KYC_STATUS_KEY = "skFinanceKycStatus";
   const accessGate = document.getElementById("accessGate");
@@ -18,19 +19,6 @@
   let currentStepId = window.chatScript.initialStep;
   let conversationState = {};
   let isBotBusy = false;
-
-  function handleKycEvent(action) {
-    if (action === "verified") {
-      moveToNextStep("eligibleResult");
-      return;
-    }
-
-    if (action === "back") {
-      if (restoreChatState()) {
-        renderStep(currentStepId);
-      }
-    }
-  }
 
   function persistChatState() {
     const payload = {
@@ -68,14 +56,38 @@
     sessionStorage.removeItem(KYC_STATUS_KEY);
   }
 
+  function isSessionAuthorized() {
+    return sessionStorage.getItem(AUTH_SESSION_KEY) === "true";
+  }
+
   function unlockDemo() {
+    sessionStorage.setItem(AUTH_SESSION_KEY, "true");
     accessGate.hidden = true;
     document.body.classList.remove("locked");
     accessInput.value = "";
     accessError.hidden = true;
   }
 
-  document.body.classList.add("locked");
+  function handleKycReturn() {
+    if (getPendingKycReturn() && restoreChatState()) {
+      clearPendingKycReturn();
+      moveToNextStep("eligibleResult");
+      return true;
+    }
+
+    if (restoreChatState()) {
+      renderStep(currentStepId);
+      return true;
+    }
+
+    return false;
+  }
+
+  if (isSessionAuthorized()) {
+    accessGate.hidden = true;
+  } else {
+    document.body.classList.add("locked");
+  }
 
   function resetConversation() {
     currentStepId = window.chatScript.initialStep;
@@ -366,27 +378,12 @@
 
   restartButton.addEventListener("click", resetConversation);
 
-  window.addEventListener("message", (event) => {
-    if (event.origin !== window.location.origin || !event.data || event.data.type !== "skFinanceKycReturn") {
-      return;
-    }
-
-    handleKycEvent(event.data.action);
-  });
-
   accessForm.addEventListener("submit", (event) => {
     event.preventDefault();
 
     if (accessInput.value === DEMO_PASSWORD) {
       unlockDemo();
-      if (getPendingKycReturn() && restoreChatState()) {
-        clearPendingKycReturn();
-        handleKycEvent("verified");
-        return;
-      }
-
-      if (restoreChatState()) {
-        renderStep(currentStepId);
+      if (handleKycReturn()) {
         return;
       }
 
@@ -397,4 +394,10 @@
     accessError.hidden = false;
     accessInput.select();
   });
+
+  if (isSessionAuthorized()) {
+    if (!handleKycReturn()) {
+      resetConversation();
+    }
+  }
 })();
