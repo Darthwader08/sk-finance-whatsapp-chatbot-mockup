@@ -9,7 +9,12 @@ window.chatScript = {
         "Select language"
       ],
       options: [
-        { label: "English", value: "English", next: "mobileOne" }
+        { label: "English", value: "English", next: "mobileOne" },
+        { label: "हिंदी", value: "हिंदी", next: "mobileOne" },
+        { label: "मराठी", value: "मराठी", next: "mobileOne" },
+        { label: "ગુજરાતી", value: "ગુજરાતી", next: "mobileOne" },
+        { label: "ਪੰਜਾਬੀ", value: "ਪੰਜਾਬੀ", next: "mobileOne" },
+        { label: "ಕನ್ನಡ", value: "ಕನ್ನಡ", next: "mobileOne" }
       ]
     },
     mobileOne: {
@@ -28,7 +33,10 @@ window.chatScript = {
         "Your mobile number is not registered with us. Choose any one option from below."
       ],
       options: [
-        { label: "Apply for loan", value: "Apply for loan", next: "mobileTwo" }
+        { label: "Apply for loan", value: "Apply for loan", next: "mobileTwo" },
+        { label: "Register new number", value: "Register new number", next: "mobileTwo" },
+        { label: "Raise a ticket for customer by employee", value: "Raise a ticket for customer by employee", next: "mobileTwo" },
+        { label: "Banking Update", value: "Banking Update", next: "mobileTwo" }
       ]
     },
     mobileTwo: {
