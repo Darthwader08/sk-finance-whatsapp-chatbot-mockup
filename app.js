@@ -1,6 +1,5 @@
 (function () {
   const DEMO_PASSWORD = "Nano4545$";
-  const ACCESS_KEY = "skFinanceDemoUnlocked";
   const accessGate = document.getElementById("accessGate");
   const accessForm = document.getElementById("accessForm");
   const accessInput = document.getElementById("accessInput");
@@ -19,22 +18,13 @@
   let isBotBusy = false;
 
   function unlockDemo() {
-    localStorage.setItem(ACCESS_KEY, "true");
     accessGate.hidden = true;
     document.body.classList.remove("locked");
     accessInput.value = "";
     accessError.hidden = true;
   }
 
-  function isUnlocked() {
-    return localStorage.getItem(ACCESS_KEY) === "true";
-  }
-
-  if (!isUnlocked()) {
-    document.body.classList.add("locked");
-  } else {
-    accessGate.hidden = true;
-  }
+  document.body.classList.add("locked");
 
   function resetConversation() {
     currentStepId = window.chatScript.initialStep;
@@ -333,8 +323,4 @@
     accessError.hidden = false;
     accessInput.select();
   });
-
-  if (isUnlocked()) {
-    resetConversation();
-  }
 })();

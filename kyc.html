@@ -220,7 +220,6 @@
 
   <script>
     const DEMO_PASSWORD = "Nano4545$";
-    const ACCESS_KEY = "skFinanceDemoUnlocked";
     const accessGate = document.getElementById("accessGate");
     const accessForm = document.getElementById("accessForm");
     const accessInput = document.getElementById("accessInput");
@@ -229,18 +228,13 @@
     const result = document.getElementById("kycResult");
 
     function unlockDemo() {
-      localStorage.setItem(ACCESS_KEY, "true");
       accessGate.hidden = true;
       document.body.classList.remove("locked");
       accessInput.value = "";
       accessError.hidden = true;
     }
 
-    if (localStorage.getItem(ACCESS_KEY) !== "true") {
-      document.body.classList.add("locked");
-    } else {
-      accessGate.hidden = true;
-    }
+    document.body.classList.add("locked");
 
     accessForm.addEventListener("submit", function (event) {
       event.preventDefault();
