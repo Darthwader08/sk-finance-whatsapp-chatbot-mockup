@@ -1,5 +1,7 @@
 (function () {
   const DEMO_PASSWORD = "Nano4545$";
+  const CHAT_STATE_KEY = "skFinanceChatState";
+  const KYC_STATUS_KEY = "skFinanceKycStatus";
   const accessGate = document.getElementById("accessGate");
   const accessForm = document.getElementById("accessForm");
   const accessInput = document.getElementById("accessInput");
@@ -16,6 +18,42 @@
   let currentStepId = window.chatScript.initialStep;
   let conversationState = {};
   let isBotBusy = false;
+
+  function persistChatState() {
+    const payload = {
+      currentStepId,
+      conversationState
+    };
+    sessionStorage.setItem(CHAT_STATE_KEY, JSON.stringify(payload));
+  }
+
+  function restoreChatState() {
+    const raw = sessionStorage.getItem(CHAT_STATE_KEY);
+    if (!raw) {
+      return false;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.currentStepId) {
+        return false;
+      }
+
+      currentStepId = parsed.currentStepId;
+      conversationState = parsed.conversationState || {};
+      return true;
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function getPendingKycReturn() {
+    return sessionStorage.getItem(KYC_STATUS_KEY) === "verified";
+  }
+
+  function clearPendingKycReturn() {
+    sessionStorage.removeItem(KYC_STATUS_KEY);
+  }
 
   function unlockDemo() {
     accessGate.hidden = true;
@@ -35,6 +73,7 @@
     input.value = "";
     input.disabled = false;
     setPresence("Online now");
+    persistChatState();
     renderStep(currentStepId);
   }
 
@@ -246,6 +285,7 @@
 
   function moveToNextStep(nextStepId) {
     currentStepId = nextStepId;
+    persistChatState();
     renderStep(currentStepId);
   }
 
@@ -286,6 +326,8 @@
       saveCapture(currentStep, value);
     }
 
+    persistChatState();
+
     const actionStatus = applyAction(option);
     if (actionStatus === "stopped") {
       return;
@@ -316,6 +358,17 @@
 
     if (accessInput.value === DEMO_PASSWORD) {
       unlockDemo();
+      if (getPendingKycReturn() && restoreChatState()) {
+        clearPendingKycReturn();
+        moveToNextStep("eligibleResult");
+        return;
+      }
+
+      if (restoreChatState()) {
+        renderStep(currentStepId);
+        return;
+      }
+
       resetConversation();
       return;
     }

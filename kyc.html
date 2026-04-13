@@ -208,22 +208,28 @@
 
       <div class="actions">
         <button type="submit">Verify</button>
-        <a class="secondary-link" href="./index.html">Back to Chatbot</a>
+        <a id="backToChatLink" class="secondary-link" href="./index.html">Back to Chatbot</a>
       </div>
     </form>
 
     <section id="kycResult" class="result">
       <strong>Verification successful.</strong>
-      <p>Your Aadhaar and PAN have been verified for this mockup. Return to the chatbot and choose <strong>Verified Successfully</strong>.</p>
+      <p>Your Aadhaar and PAN have been verified for this mockup. Continue to the chatbot to proceed with eligibility and EMI calculation.</p>
+      <div class="actions">
+        <a id="continueToChatLink" class="secondary-link" href="./index.html">Continue to Chatbot</a>
+      </div>
     </section>
   </main>
 
   <script>
     const DEMO_PASSWORD = "Nano4545$";
+    const KYC_STATUS_KEY = "skFinanceKycStatus";
     const accessGate = document.getElementById("accessGate");
     const accessForm = document.getElementById("accessForm");
     const accessInput = document.getElementById("accessInput");
     const accessError = document.getElementById("accessError");
+    const backToChatLink = document.getElementById("backToChatLink");
+    const continueToChatLink = document.getElementById("continueToChatLink");
     const form = document.getElementById("kycForm");
     const result = document.getElementById("kycResult");
 
@@ -235,6 +241,14 @@
     }
 
     document.body.classList.add("locked");
+
+    backToChatLink.addEventListener("click", function () {
+      sessionStorage.removeItem(KYC_STATUS_KEY);
+    });
+
+    continueToChatLink.addEventListener("click", function () {
+      sessionStorage.setItem(KYC_STATUS_KEY, "verified");
+    });
 
     accessForm.addEventListener("submit", function (event) {
       event.preventDefault();
