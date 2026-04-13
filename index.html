@@ -10,6 +10,19 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <section id="accessGate" class="access-gate">
+    <div class="access-card">
+      <div class="brand-badge">SK Finance</div>
+      <h1>Protected Demo</h1>
+      <p>Enter the password to view the SK Finance WhatsApp chatbot mockup.</p>
+      <form id="accessForm" class="access-form">
+        <input id="accessInput" type="password" placeholder="Enter password" autocomplete="current-password" aria-label="Demo password">
+        <button type="submit">Unlock Demo</button>
+      </form>
+      <p id="accessError" class="access-error" hidden>Incorrect password. Please try again.</p>
+    </div>
+  </section>
+
   <main class="app-shell">
     <section class="info-panel">
       <div class="brand-badge">SK Finance</div>

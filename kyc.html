@@ -33,6 +33,34 @@
       background: var(--bg);
     }
 
+    body.locked {
+      overflow: hidden;
+    }
+
+    .access-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(10, 20, 18, 0.55);
+      backdrop-filter: blur(12px);
+    }
+
+    .access-gate[hidden] {
+      display: none;
+    }
+
+    .access-card {
+      width: min(100%, 440px);
+      padding: 28px;
+      border-radius: 28px;
+      background: rgba(255, 252, 247, 0.96);
+      box-shadow: 0 24px 60px rgba(18, 49, 41, 0.2);
+      border: 1px solid var(--border);
+    }
+
     .card {
       width: min(100%, 620px);
       padding: 28px;
@@ -118,9 +146,48 @@
     .result.show {
       display: block;
     }
+
+    .access-card form {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .access-card input {
+      flex: 1;
+      margin-top: 0;
+    }
+
+    .access-card button {
+      white-space: nowrap;
+    }
+
+    .access-error {
+      margin-top: 12px;
+      color: #b42318;
+      font-weight: 700;
+    }
+
+    @media (max-width: 520px) {
+      .access-card form {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
+  <section id="accessGate" class="access-gate">
+    <div class="access-card">
+      <h1>Protected Demo</h1>
+      <p>Enter the password to view the Aadhaar and PAN verification page.</p>
+      <form id="accessForm">
+        <input id="accessInput" type="password" placeholder="Enter password" autocomplete="current-password">
+        <button type="submit">Unlock Demo</button>
+      </form>
+      <p id="accessError" class="access-error" hidden>Incorrect password. Please try again.</p>
+    </div>
+  </section>
+
   <main class="card">
     <h1>Aadhaar &amp; PAN Verification</h1>
     <p>
@@ -152,8 +219,40 @@
   </main>
 
   <script>
+    const DEMO_PASSWORD = "Nano4545$";
+    const ACCESS_KEY = "skFinanceDemoUnlocked";
+    const accessGate = document.getElementById("accessGate");
+    const accessForm = document.getElementById("accessForm");
+    const accessInput = document.getElementById("accessInput");
+    const accessError = document.getElementById("accessError");
     const form = document.getElementById("kycForm");
     const result = document.getElementById("kycResult");
+
+    function unlockDemo() {
+      localStorage.setItem(ACCESS_KEY, "true");
+      accessGate.hidden = true;
+      document.body.classList.remove("locked");
+      accessInput.value = "";
+      accessError.hidden = true;
+    }
+
+    if (localStorage.getItem(ACCESS_KEY) !== "true") {
+      document.body.classList.add("locked");
+    } else {
+      accessGate.hidden = true;
+    }
+
+    accessForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      if (accessInput.value === DEMO_PASSWORD) {
+        unlockDemo();
+        return;
+      }
+
+      accessError.hidden = false;
+      accessInput.select();
+    });
 
     form.addEventListener("submit", function (event) {
       event.preventDefault();

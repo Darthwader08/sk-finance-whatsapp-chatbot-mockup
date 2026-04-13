@@ -1,4 +1,10 @@
 (function () {
+  const DEMO_PASSWORD = "Nano4545$";
+  const ACCESS_KEY = "skFinanceDemoUnlocked";
+  const accessGate = document.getElementById("accessGate");
+  const accessForm = document.getElementById("accessForm");
+  const accessInput = document.getElementById("accessInput");
+  const accessError = document.getElementById("accessError");
   const messageContainer = document.getElementById("chatMessages");
   const quickRepliesContainer = document.getElementById("quickReplies");
   const form = document.getElementById("chatForm");
@@ -11,6 +17,24 @@
   let currentStepId = window.chatScript.initialStep;
   let conversationState = {};
   let isBotBusy = false;
+
+  function unlockDemo() {
+    localStorage.setItem(ACCESS_KEY, "true");
+    accessGate.hidden = true;
+    document.body.classList.remove("locked");
+    accessInput.value = "";
+    accessError.hidden = true;
+  }
+
+  function isUnlocked() {
+    return localStorage.getItem(ACCESS_KEY) === "true";
+  }
+
+  if (!isUnlocked()) {
+    document.body.classList.add("locked");
+  } else {
+    accessGate.hidden = true;
+  }
 
   function resetConversation() {
     currentStepId = window.chatScript.initialStep;
@@ -297,5 +321,20 @@
 
   restartButton.addEventListener("click", resetConversation);
 
-  resetConversation();
+  accessForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    if (accessInput.value === DEMO_PASSWORD) {
+      unlockDemo();
+      resetConversation();
+      return;
+    }
+
+    accessError.hidden = false;
+    accessInput.select();
+  });
+
+  if (isUnlocked()) {
+    resetConversation();
+  }
 })();
