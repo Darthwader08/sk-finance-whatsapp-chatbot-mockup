@@ -5,6 +5,7 @@
   const quickRepliesContainer = document.getElementById("quickReplies");
   const form = document.getElementById("chatForm");
   const input = document.getElementById("chatInput");
+  const documentPicker = document.getElementById("documentPicker");
   const restartButton = document.getElementById("restartButton");
   const presenceText = document.getElementById("presenceText");
   const template = document.getElementById("messageTemplate");
@@ -209,6 +210,14 @@
       conversationState.selectedDocKey = option.value;
     }
 
+    if (option.action === "triggerUpload") {
+      if (documentPicker) {
+        documentPicker.value = "";
+        documentPicker.click();
+      }
+      return "awaiting_file";
+    }
+
     if (option.action === "skipSelectedDoc") {
       const key = conversationState.selectedDocKey;
       if (key) {
@@ -380,6 +389,28 @@
   });
 
   restartButton.addEventListener("click", resetConversation);
+
+  documentPicker.addEventListener("change", () => {
+    const file = documentPicker.files && documentPicker.files[0];
+    if (!file) {
+      return;
+    }
+
+    const selectedDoc = conversationState.selectedDocKey;
+    if (!selectedDoc) {
+      return;
+    }
+
+    createMessage(file.name, "user", false);
+    conversationState.lastUploadNote = file.name;
+    conversationState.uploadedDocs = conversationState.uploadedDocs || {};
+    conversationState.uploadedDocs[selectedDoc] = {
+      status: "uploaded",
+      note: file.name
+    };
+    persistChatState();
+    moveToNextStep("documentUploadResult");
+  });
 
   if (!handleKycReturn()) {
     resetConversation();

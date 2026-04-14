@@ -474,36 +474,14 @@ window.chatScript = {
       ],
       dynamicOptions: () => {
         return [
-          { label: "Upload Document", value: "upload", next: "documentUpload" },
+          { label: "Upload Document", value: "upload", action: "triggerUpload" },
           { label: "Skip - Already Uploaded", value: "skip", action: "skipSelectedDoc", next: () => "documentCategory" },
-          { label: "Re-upload Document", value: "reupload", next: "documentUpload" },
+          { label: "Re-upload Document", value: "reupload", action: "triggerUpload" },
           { label: "Back to Category", value: "back", next: "documentCategory" }
         ];
       }
     },
-    documentUpload: {
-      dynamicMessages: [
-        (state) => {
-          const doc = getSelectedDocument(state);
-          return `Please upload or share the ${doc.label}. For this mockup, type the file name, file type, or attachment note.`;
-        }
-      ],
-      capture: {
-        key: "lastUploadNote",
-        label: "Upload Note",
-        validate: "upload"
-      },
-      next: "documentUploadResult"
-    },
     documentUploadResult: {
-      onEnter: (state) => {
-        const doc = getSelectedDocument(state);
-        state.uploadedDocs = state.uploadedDocs || {};
-        state.uploadedDocs[doc.key] = {
-          status: "uploaded",
-          note: state.lastUploadNote || "Uploaded"
-        };
-      },
       dynamicMessages: [
         (state) => {
           const doc = getSelectedDocument(state);
