@@ -1,12 +1,6 @@
 (function () {
-  const DEMO_PASSWORD = "Nano4545$";
-  const AUTH_SESSION_KEY = "skFinanceDemoSessionAuth";
   const CHAT_STATE_KEY = "skFinanceChatState";
   const KYC_STATUS_KEY = "skFinanceKycStatus";
-  const accessGate = document.getElementById("accessGate");
-  const accessForm = document.getElementById("accessForm");
-  const accessInput = document.getElementById("accessInput");
-  const accessError = document.getElementById("accessError");
   const messageContainer = document.getElementById("chatMessages");
   const quickRepliesContainer = document.getElementById("quickReplies");
   const form = document.getElementById("chatForm");
@@ -21,11 +15,7 @@
   let isBotBusy = false;
 
   function persistChatState() {
-    const payload = {
-      currentStepId,
-      conversationState
-    };
-    sessionStorage.setItem(CHAT_STATE_KEY, JSON.stringify(payload));
+    sessionStorage.setItem(CHAT_STATE_KEY, JSON.stringify({ currentStepId, conversationState }));
   }
 
   function restoreChatState() {
@@ -36,11 +26,7 @@
 
     try {
       const parsed = JSON.parse(raw);
-      if (!parsed || !parsed.currentStepId) {
-        return false;
-      }
-
-      currentStepId = parsed.currentStepId;
+      currentStepId = parsed.currentStepId || window.chatScript.initialStep;
       conversationState = parsed.conversationState || {};
       return true;
     } catch (_error) {
@@ -56,42 +42,13 @@
     sessionStorage.removeItem(KYC_STATUS_KEY);
   }
 
-  function isSessionAuthorized() {
-    return sessionStorage.getItem(AUTH_SESSION_KEY) === "true";
-  }
-
-  function unlockDemo() {
-    sessionStorage.setItem(AUTH_SESSION_KEY, "true");
-    accessGate.hidden = true;
-    document.body.classList.remove("locked");
-    accessInput.value = "";
-    accessError.hidden = true;
-  }
-
-  function handleKycReturn() {
-    if (getPendingKycReturn() && restoreChatState()) {
-      clearPendingKycReturn();
-      moveToNextStep("eligibleResult");
-      return true;
-    }
-
-    if (restoreChatState()) {
-      renderStep(currentStepId);
-      return true;
-    }
-
-    return false;
-  }
-
-  if (isSessionAuthorized()) {
-    accessGate.hidden = true;
-  } else {
-    document.body.classList.add("locked");
+  function setPresence(text) {
+    presenceText.textContent = text;
   }
 
   function resetConversation() {
     currentStepId = window.chatScript.initialStep;
-    conversationState = {};
+    conversationState = { uploadedDocs: {} };
     isBotBusy = false;
     messageContainer.innerHTML = "";
     quickRepliesContainer.innerHTML = "";
@@ -100,10 +57,6 @@
     setPresence("Online now");
     persistChatState();
     renderStep(currentStepId);
-  }
-
-  function setPresence(text) {
-    presenceText.textContent = text;
   }
 
   function escapeHtml(text) {
@@ -116,13 +69,7 @@
   }
 
   function formatTextAsHtml(text) {
-    const escaped = escapeHtml(text);
-    const withLinks = escaped.replace(
-      /(https?:\/\/[^\s<]+)/g,
-      '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
-    );
-
-    return withLinks.replace(/\n/g, "<br>");
+    return escapeHtml(text).replace(/\n/g, "<br>");
   }
 
   function createMessage(content, sender, isTyping) {
@@ -132,11 +79,7 @@
     row.classList.add(sender);
 
     if (isTyping) {
-      bubble.innerHTML = [
-        '<div class="typing-indicator" aria-label="Bot is typing">',
-        "<span></span><span></span><span></span>",
-        "</div>"
-      ].join("");
+      bubble.innerHTML = '<div class="typing-indicator" aria-label="Bot is typing"><span></span><span></span><span></span></div>';
     } else if (content && typeof content === "object" && content.html) {
       bubble.innerHTML = content.html;
     } else {
@@ -145,7 +88,6 @@
 
     messageContainer.appendChild(fragment);
     messageContainer.scrollTop = messageContainer.scrollHeight;
-
     return messageContainer.lastElementChild;
   }
 
@@ -155,6 +97,21 @@
 
   function normalizeInput(value) {
     return value.trim();
+  }
+
+  function getOptions(step) {
+    if (typeof step.dynamicOptions === "function") {
+      return step.dynamicOptions(conversationState);
+    }
+
+    return step.options || [];
+  }
+
+  function runStepEnter(step) {
+    if (typeof step.onEnter === "function") {
+      step.onEnter(conversationState);
+      persistChatState();
+    }
   }
 
   function validateInput(step, value) {
@@ -176,8 +133,8 @@
         return normalized.length >= 3;
       case "amount":
         return /^\d{5,8}$/.test(numeric);
-      case "tenure":
-        return ["24", "36", "48", "60"].includes(numeric);
+      case "upload":
+        return normalized.length >= 2;
       default:
         return true;
     }
@@ -199,8 +156,8 @@
         return "Please enter your full name.";
       case "amount":
         return "Please enter a valid loan amount.";
-      case "tenure":
-        return "Please enter one of the supported tenure values: 24, 36, 48, or 60.";
+      case "upload":
+        return "Please enter the uploaded file name, file type, or attachment note.";
       default:
         return "Please enter a valid response.";
     }
@@ -211,7 +168,7 @@
       return value.trim();
     }
 
-    if (["phone", "otp", "amount", "tenure"].includes(step.capture.validate)) {
+    if (["phone", "otp", "amount"].includes(step.capture.validate)) {
       return value.replace(/\D/g, "");
     }
 
@@ -244,26 +201,27 @@
       conversationState.remarks = "";
     }
 
-    return "continue";
-  }
-
-  function renderQuickReplies(step) {
-    quickRepliesContainer.innerHTML = "";
-
-    if (!step.options || !step.options.length) {
-      return;
+    if (option.action === "setDocCategory") {
+      conversationState.currentDocCategory = option.value;
     }
 
-    step.options.forEach((option) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "quick-reply";
-      button.textContent = option.label;
-      button.addEventListener("click", () => {
-        processUserTurn(option.label, option);
-      });
-      quickRepliesContainer.appendChild(button);
-    });
+    if (option.action === "selectDoc") {
+      conversationState.selectedDocKey = option.value;
+    }
+
+    if (option.action === "skipSelectedDoc") {
+      const key = conversationState.selectedDocKey;
+      if (key) {
+        conversationState.uploadedDocs = conversationState.uploadedDocs || {};
+        conversationState.uploadedDocs[key] = {
+          status: "skipped",
+          note: "Skipped as already uploaded"
+        };
+      }
+    }
+
+    persistChatState();
+    return "continue";
   }
 
   function collectMessages(step) {
@@ -275,8 +233,29 @@
     return [...staticMessages, ...dynamicMessages];
   }
 
+  function renderQuickReplies(step) {
+    quickRepliesContainer.innerHTML = "";
+    const options = getOptions(step);
+
+    if (!options.length) {
+      return;
+    }
+
+    options.forEach((option) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "quick-reply";
+      button.textContent = option.label;
+      button.addEventListener("click", () => {
+        processUserTurn(option.label, option);
+      });
+      quickRepliesContainer.appendChild(button);
+    });
+  }
+
   function renderStep(stepId) {
     const step = getStep(stepId);
+    runStepEnter(step);
     const messages = collectMessages(step);
     quickRepliesContainer.innerHTML = "";
     input.placeholder = step.capture ? "Type your reply..." : "Choose an option or type your reply...";
@@ -290,16 +269,17 @@
     isBotBusy = true;
     input.disabled = true;
     setPresence("Typing...");
-
     const typingNode = createMessage("", "bot", true);
 
     setTimeout(() => {
       if (typingNode && typingNode.remove) {
         typingNode.remove();
       }
+
       messages.forEach((message) => {
         createMessage(message, "bot", false);
       });
+
       renderQuickReplies(step);
       isBotBusy = false;
       input.disabled = false;
@@ -308,8 +288,16 @@
     }, typingDelay);
   }
 
+  function resolveNext(next) {
+    if (typeof next === "function") {
+      return next(conversationState);
+    }
+
+    return next;
+  }
+
   function moveToNextStep(nextStepId) {
-    currentStepId = nextStepId;
+    currentStepId = resolveNext(nextStepId);
     persistChatState();
     renderStep(currentStepId);
   }
@@ -328,7 +316,8 @@
     input.value = "";
 
     const currentStep = getStep(currentStepId);
-    const option = selectedOption || (currentStep.options || []).find((item) => {
+    const options = getOptions(currentStep);
+    const option = selectedOption || options.find((item) => {
       return item.label.toLowerCase() === value.toLowerCase() || item.value.toLowerCase() === value.toLowerCase();
     });
 
@@ -336,7 +325,7 @@
       saveCapture(currentStep, option.value);
     }
 
-    if (!option && currentStep.options && currentStep.options.length && !currentStep.capture) {
+    if (!option && options.length && !currentStep.capture) {
       moveToNextStep(window.chatScript.fallbackStep);
       return;
     }
@@ -352,7 +341,6 @@
     }
 
     persistChatState();
-
     const actionStatus = applyAction(option);
     if (actionStatus === "stopped") {
       return;
@@ -371,6 +359,21 @@
     renderQuickReplies(currentStep);
   }
 
+  function handleKycReturn() {
+    if (getPendingKycReturn() && restoreChatState()) {
+      clearPendingKycReturn();
+      moveToNextStep("eligibleResult");
+      return true;
+    }
+
+    if (restoreChatState()) {
+      renderStep(currentStepId);
+      return true;
+    }
+
+    return false;
+  }
+
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     processUserTurn(input.value);
@@ -378,26 +381,7 @@
 
   restartButton.addEventListener("click", resetConversation);
 
-  accessForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    if (accessInput.value === DEMO_PASSWORD) {
-      unlockDemo();
-      if (handleKycReturn()) {
-        return;
-      }
-
-      resetConversation();
-      return;
-    }
-
-    accessError.hidden = false;
-    accessInput.select();
-  });
-
-  if (isSessionAuthorized()) {
-    if (!handleKycReturn()) {
-      resetConversation();
-    }
+  if (!handleKycReturn()) {
+    resetConversation();
   }
 })();

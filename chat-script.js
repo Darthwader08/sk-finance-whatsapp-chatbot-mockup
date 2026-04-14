@@ -326,10 +326,7 @@ window.chatScript = {
         () => ({
           html: 'Open KYC verification: <a href="./kyc.html">Aadhaar / PAN Verification Demo</a>'
         }),
-        "Once both Aadhaar and PAN are verified successfully, come back here and choose the option below."
-      ],
-      options: [
-        { label: "Verified Successfully", value: "Verified Successfully", next: "eligibleResult" }
+        "Once both Aadhaar and PAN are verified successfully, return here to continue."
       ]
     },
     eligibleResult: {
@@ -390,36 +387,192 @@ window.chatScript = {
               `Selected tenure: <strong>${state.tenureMonths} months</strong><br>`,
               `Indicative ROI: <strong>${roi.toFixed(2)}% per annum</strong><br>`,
               `Estimated monthly installment: <strong>${formatCurrency(emi)}</strong><br><br>`,
-              "Would you like to proceed?"
+              "Please continue to document upload before proceeding with the application."
             ].join("")
           };
         }
       ],
       options: [
-        { label: "Proceed", value: "Proceed", next: "finalSummary" },
+        { label: "Continue to Document Upload", value: "Continue to Document Upload", next: "documentCenter" },
         { label: "Change Tenure", value: "Change Tenure", next: "loanCalculation" }
+      ]
+    },
+    documentCenter: {
+      dynamicMessages: [
+        (state) => {
+          const uploadedCount = getDocumentStatusCount(state, "uploaded");
+          const skippedCount = getDocumentStatusCount(state, "skipped");
+          return {
+            html: [
+              "<strong>Document Upload Center</strong><br>",
+              "Please upload or review the supporting documents required for the application.<br><br>",
+              `Uploaded: <strong>${uploadedCount}</strong><br>`,
+              `Skipped/Already Uploaded: <strong>${skippedCount}</strong><br><br>`,
+              "Select a document category below."
+            ].join("")
+          };
+        }
+      ],
+      dynamicOptions: () => {
+        return [
+          { label: "KYC Docs", value: "kyc", action: "setDocCategory", next: "documentCategory" },
+          { label: "Income Docs", value: "income", action: "setDocCategory", next: "documentCategory" },
+          { label: "Banking Docs", value: "banking", action: "setDocCategory", next: "documentCategory" },
+          { label: "Vehicle Docs", value: "vehicle", action: "setDocCategory", next: "documentCategory" },
+          { label: "Others", value: "others", action: "setDocCategory", next: "documentCategory" },
+          { label: "Proceed with Application", value: "Proceed with Application", next: "applicationReview" }
+        ];
+      }
+    },
+    documentCategory: {
+      dynamicMessages: [
+        (state) => {
+          const category = getCurrentCategory(state);
+          return {
+            html: [
+              `<strong>${category.title}</strong><br>`,
+              "Choose the document you want to upload, skip, or re-upload."
+            ].join("")
+          };
+        }
+      ],
+      dynamicOptions: (state) => {
+        const category = getCurrentCategory(state);
+        return category.docs.map((doc) => {
+          const entry = getDocumentEntry(state, doc.key);
+          const suffix = entry ? ` (${entry.status === "uploaded" ? "Uploaded" : "Skipped"})` : "";
+          return {
+            label: `${doc.label}${suffix}`,
+            value: doc.key,
+            action: "selectDoc",
+            next: "documentAction"
+          };
+        }).concat([
+          { label: "Back to Document Center", value: "back", next: "documentCenter" }
+        ]);
+      }
+    },
+    documentAction: {
+      dynamicMessages: [
+        (state) => {
+          const doc = getSelectedDocument(state);
+          const entry = getDocumentEntry(state, doc.key);
+          const statusLine = entry
+            ? `Current status: <strong>${entry.status === "uploaded" ? "Uploaded" : "Skipped / Already Uploaded"}</strong><br>`
+            : "Current status: <strong>Pending</strong><br>";
+          const noteLine = entry && entry.note ? `Latest note: <strong>${escapeDocHtml(entry.note)}</strong><br>` : "";
+
+          return {
+            html: [
+              `<strong>${doc.label}</strong><br>`,
+              `${statusLine}`,
+              `${noteLine}`,
+              "Choose how you would like to continue with this document."
+            ].join("")
+          };
+        }
+      ],
+      dynamicOptions: () => {
+        return [
+          { label: "Upload Document", value: "upload", next: "documentUpload" },
+          { label: "Skip - Already Uploaded", value: "skip", action: "skipSelectedDoc", next: () => "documentCategory" },
+          { label: "Re-upload Document", value: "reupload", next: "documentUpload" },
+          { label: "Back to Category", value: "back", next: "documentCategory" }
+        ];
+      }
+    },
+    documentUpload: {
+      dynamicMessages: [
+        (state) => {
+          const doc = getSelectedDocument(state);
+          return `Please upload or share the ${doc.label}. For this mockup, type the file name, file type, or attachment note.`;
+        }
+      ],
+      capture: {
+        key: "lastUploadNote",
+        label: "Upload Note",
+        validate: "upload"
+      },
+      next: "documentUploadResult"
+    },
+    documentUploadResult: {
+      onEnter: (state) => {
+        const doc = getSelectedDocument(state);
+        state.uploadedDocs = state.uploadedDocs || {};
+        state.uploadedDocs[doc.key] = {
+          status: "uploaded",
+          note: state.lastUploadNote || "Uploaded"
+        };
+      },
+      dynamicMessages: [
+        (state) => {
+          const doc = getSelectedDocument(state);
+          const note = escapeDocHtml(state.lastUploadNote || "Uploaded");
+
+          if (doc.key === "pan") {
+            return {
+              html: [
+                `<strong>${doc.label} uploaded successfully.</strong><br>`,
+                `Received file: <strong>${note}</strong><br>`,
+                "OCR completed successfully.<br>",
+                "The uploaded PAN matches the entered PAN details."
+              ].join("")
+            };
+          }
+
+          return {
+            html: [
+              `<strong>${doc.label} uploaded successfully.</strong><br>`,
+              `Received file: <strong>${note}</strong>`
+            ].join("")
+          };
+        }
+      ],
+      options: [
+        { label: "Upload More Documents", value: "Upload More Documents", next: "documentCategory" },
+        { label: "Go to Document Center", value: "Go to Document Center", next: "documentCenter" }
+      ]
+    },
+    applicationReview: {
+      dynamicMessages: [
+        (state) => {
+          const uploaded = summarizeDocsByStatus(state, "uploaded");
+          const skipped = summarizeDocsByStatus(state, "skipped");
+          return {
+            html: [
+              "<strong>Application Review</strong><br>",
+              "Your loan estimate and document stage are complete.<br><br>",
+              `Uploaded documents: <strong>${uploaded || "None"}</strong><br>`,
+              `Skipped / already uploaded: <strong>${skipped || "None"}</strong><br><br>`,
+              "Would you like to proceed with the application?"
+            ].join("")
+          };
+        }
+      ],
+      options: [
+        { label: "Proceed with Application", value: "Proceed with Application", next: "finalSummary" },
+        { label: "Upload More Documents", value: "Upload More Documents", next: "documentCenter" }
       ]
     },
     finalSummary: {
       dynamicMessages: [
         (state) => {
-          const lines = [
-            "Thank you. Your car loan application mockup is ready for submission.",
-            `Customer Name: ${state.name || "-"}`,
-            `Mobile Number: ${state.phone || "-"}`,
-            `Loan Type: ${state.loanType || "-"}`,
-            `Requested Amount: ${formatCurrency(state.loanAmount)}`,
-            `State: ${state.state || "-"}`,
-            `Branch: ${state.branch || "-"}`,
-            `Email: ${state.email || "Skipped"}`,
-            `Remarks: ${state.remarks || "Skipped"}`,
-            `Tenure: ${state.tenureMonths || "-"} months`,
-            `Indicative ROI: ${state.roi ? `${state.roi.toFixed(2)}%` : "-"}`,
-            `Estimated EMI: ${state.emi ? formatCurrency(state.emi) : "-"}`
-          ];
-          return lines.join("\n");
+          return {
+            html: [
+              "<strong>Thank you. Your application and supporting documents have been received successfully.</strong><br><br>",
+              `Customer Name: <strong>${escapeDocHtml(state.name || "-")}</strong><br>`,
+              `Mobile Number: <strong>${escapeDocHtml(state.phone || "-")}</strong><br>`,
+              `Loan Type: <strong>${escapeDocHtml(state.loanType || "-")}</strong><br>`,
+              `Requested Amount: <strong>${formatCurrency(state.loanAmount)}</strong><br>`,
+              `State: <strong>${escapeDocHtml(state.state || "-")}</strong><br>`,
+              `Branch: <strong>${escapeDocHtml(state.branch || "-")}</strong><br>`,
+              `Tenure: <strong>${escapeDocHtml(state.tenureMonths || "-")} months</strong><br>`,
+              `Indicative ROI: <strong>${state.roi ? `${state.roi.toFixed(2)}%` : "-"}</strong><br>`,
+              `Estimated EMI: <strong>${state.emi ? formatCurrency(state.emi) : "-"}</strong><br><br>`,
+              "Our SK Finance team will review the application and connect with you for the next steps."
+            ].join("")
+          };
         },
-        "An SK Finance representative will contact you for the next steps."
       ],
       options: [
         { label: "Restart Demo", value: "Restart Demo", next: "welcome", action: "restart" }
@@ -469,4 +622,90 @@ function calculateEmi(amountValue, annualRate, monthsValue) {
 
   const factor = Math.pow(1 + monthlyRate, months);
   return Math.round((principal * monthlyRate * factor) / (factor - 1));
+}
+
+const documentCatalog = {
+  kyc: {
+    title: "KYC Docs",
+    docs: [
+      { key: "pan", label: "PAN" },
+      { key: "drivingLicense", label: "Driving License" }
+    ]
+  },
+  income: {
+    title: "Income Docs",
+    docs: [
+      { key: "salarySlips", label: "Salary Slips (photo/PDF)" },
+      { key: "itrAck", label: "ITR acknowledgment" },
+      { key: "gstSummary", label: "GST summary screenshots" }
+    ]
+  },
+  banking: {
+    title: "Banking Docs",
+    docs: [
+      { key: "bankStatement", label: "Bank statement PDF" },
+      { key: "accountSummary", label: "Screenshot of account summary (fallback case)" }
+    ]
+  },
+  vehicle: {
+    title: "Vehicle Docs",
+    docs: [
+      { key: "dealerQuotation", label: "Dealer quotation" },
+      { key: "vehicleInvoice", label: "Vehicle invoice draft" }
+    ]
+  },
+  others: {
+    title: "Others",
+    docs: [
+      { key: "cancelledCheque", label: "Cancelled cheque (image)" },
+      { key: "utilityBill", label: "Utility bill (address proof)" }
+    ]
+  }
+};
+
+function getCurrentCategory(state) {
+  return documentCatalog[state.currentDocCategory] || documentCatalog.kyc;
+}
+
+function getSelectedDocument(state) {
+  const categories = Object.values(documentCatalog);
+  for (const category of categories) {
+    const found = category.docs.find((doc) => doc.key === state.selectedDocKey);
+    if (found) {
+      return found;
+    }
+  }
+
+  return documentCatalog.kyc.docs[0];
+}
+
+function getDocumentEntry(state, key) {
+  return (state.uploadedDocs || {})[key];
+}
+
+function getDocumentStatusCount(state, status) {
+  return Object.values(state.uploadedDocs || {}).filter((entry) => entry.status === status).length;
+}
+
+function summarizeDocsByStatus(state, status) {
+  const labels = [];
+  Object.values(documentCatalog).forEach((category) => {
+    category.docs.forEach((doc) => {
+      const entry = getDocumentEntry(state, doc.key);
+      if (entry && entry.status === status) {
+        labels.push(doc.label);
+      }
+    });
+  });
+
+  return labels.join(", ");
+}
+
+function escapeDocHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
