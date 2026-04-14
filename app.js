@@ -14,6 +14,7 @@
   let currentStepId = window.chatScript.initialStep;
   let conversationState = {};
   let isBotBusy = false;
+  let hasHandledKycResume = false;
 
   function persistChatState() {
     sessionStorage.setItem(CHAT_STATE_KEY, JSON.stringify({ currentStepId, conversationState }));
@@ -371,6 +372,7 @@
   function handleKycReturn() {
     if (getPendingKycReturn() && restoreChatState()) {
       clearPendingKycReturn();
+      hasHandledKycResume = true;
       moveToNextStep("eligibleResult");
       return true;
     }
@@ -383,12 +385,30 @@
     return false;
   }
 
+  function resumeKycIfNeeded() {
+    if (!getPendingKycReturn() || hasHandledKycResume) {
+      return;
+    }
+
+    handleKycReturn();
+  }
+
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     processUserTurn(input.value);
   });
 
   restartButton.addEventListener("click", resetConversation);
+
+  window.addEventListener("pageshow", () => {
+    resumeKycIfNeeded();
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      resumeKycIfNeeded();
+    }
+  });
 
   documentPicker.addEventListener("change", () => {
     const file = documentPicker.files && documentPicker.files[0];
