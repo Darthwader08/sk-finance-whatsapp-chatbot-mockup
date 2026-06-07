@@ -1,2 +1,3 @@
 User-agent: *
 Disallow: /sk-finance-whatsapp-chatbot-mockup/cv/
+Disallow: /sk-finance-whatsapp-chatbot-mockup/anurag-shukla/
